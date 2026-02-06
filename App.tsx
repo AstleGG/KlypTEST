@@ -1,11 +1,11 @@
 
 import React, { useState } from 'react';
-import { Navbar } from './components/Navbar';
-import { KlypForm } from './components/KlypForm';
-import { Footer } from './components/Footer';
-import { FeatureSection } from './components/FeatureSection';
-import { DownloadState } from './types';
-import { getMediaMetadata } from './services/gemini';
+import { Navbar } from './components/Navbar.tsx';
+import { KlypForm } from './components/KlypForm.tsx';
+import { Footer } from './components/Footer.tsx';
+import { FeatureSection } from './components/FeatureSection.tsx';
+import { DownloadState } from './types.ts';
+import { getMediaMetadata } from './services/gemini.ts';
 
 const SupportModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;

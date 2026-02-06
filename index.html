@@ -13,33 +13,9 @@
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f8fafc;
+            margin: 0;
+            padding: 0;
         }
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-        ::-webkit-scrollbar {
-          width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-          background: #f1f5f9;
-        }
-        ::-webkit-scrollbar-thumb {
-          background: #cbd5e1;
-          border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-          background: #94a3b8;
-        }
-        .modal-enter {
-          animation: modal-in 0.3s ease-out forwards;
-        }
-        @keyframes modal-in {
-          from { opacity: 0; transform: scale(0.95) translateY(10px); }
-          to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        /* Failsafe loader styles */
         #loader {
             position: fixed;
             inset: 0;
@@ -55,12 +31,38 @@
             visibility: hidden;
             pointer-events: none;
         }
+        #error-display {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: #fee2e2;
+            border: 2px solid #ef4444;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            color: #991b1b;
+            font-size: 0.875rem;
+            z-index: 10000;
+            font-family: monospace;
+            white-space: pre-wrap;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
     </style>
-<script>
-    // Prevent crashes if process.env is accessed in static environments
-    window.process = window.process || { env: { NODE_ENV: 'production' } };
-</script>
-<script type="importmap">
+    <script>
+        // Global error capture
+        window.process = { env: { NODE_ENV: 'production' } };
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            const display = document.getElementById('error-display');
+            if (display) {
+                display.style.display = 'block';
+                display.textContent = `[Error]: ${msg}\n[At]: ${url}:${lineNo}\n[Trace]: ${error?.stack || 'no stack available'}`;
+            }
+            document.body.classList.add('loaded'); // Dismiss loader so error is visible
+            return false;
+        };
+    </script>
+    <script type="importmap">
 {
   "imports": {
     "react": "https://esm.sh/react@19.0.0",
@@ -80,28 +82,21 @@
             <p class="text-sm font-semibold text-slate-500 tracking-tight">Klyp is warming up...</p>
         </div>
     </div>
-    
+
+    <div id="error-display"></div>
     <div id="root"></div>
 
-    <!-- Ensure relative path for GitHub Pages subfolder support -->
-    <script type="module" src="index.tsx"></script>
+    <!-- Note the relative path and explicit .tsx extension for ESM resolution -->
+    <script type="module" src="./index.tsx"></script>
 
     <script type="module">
-        // Global error handler to dismiss loader if script fails to parse or load
-        window.onerror = function(msg, url, lineNo, columnNo, error) {
-            console.error('Klyp Runtime Error:', msg, error);
-            document.body.classList.add('loaded');
-            return false;
-        };
-
-        // If the React app doesn't signal 'loaded' within 3 seconds, force it.
-        // This prevents the "warming up" screen from becoming a permanent wall.
+        // Failsafe: If app doesn't mount in 5 seconds, check for errors
         setTimeout(() => {
             if (!document.body.classList.contains('loaded')) {
-                console.warn('Klyp: Taking longer than expected to load. Forcing UI...');
+                console.warn("Klyp took too long to load. Checking for hidden errors...");
                 document.body.classList.add('loaded');
             }
-        }, 3000);
+        }, 5000);
     </script>
 </body>
 </html>

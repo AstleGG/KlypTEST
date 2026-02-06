@@ -1,7 +1,7 @@
 
 import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App';
+import { createRoot } from 'react-dom/client';
+import App from './App.tsx';
 
 const startApp = () => {
   const rootElement = document.getElementById('root');
@@ -12,14 +12,14 @@ const startApp = () => {
   }
 
   try {
-    const root = ReactDOM.createRoot(rootElement);
+    const root = createRoot(rootElement);
     root.render(
       <React.StrictMode>
         <App />
       </React.StrictMode>
     );
     
-    // Signal to the HTML loader that we are ready
+    // Hide loader once React has control
     requestAnimationFrame(() => {
       setTimeout(() => {
         document.body.classList.add('loaded');
@@ -27,6 +27,12 @@ const startApp = () => {
     });
   } catch (err) {
     console.error("Klyp: Rendering Error:", err);
+    // Force error visibility
+    const display = document.getElementById('error-display');
+    if (display) {
+        display.style.display = 'block';
+        display.textContent = `Render Error: ${err.message}\n${err.stack}`;
+    }
     document.body.classList.add('loaded');
   }
 };
