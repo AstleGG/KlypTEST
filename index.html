@@ -1,102 +1,177 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Klyp - Simplified Downloader</title>
+    <!-- Tailwind Play CDN for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
-            margin: 0;
-            padding: 0;
-        }
-        #loader {
-            position: fixed;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #f8fafc;
-            z-index: 9999;
-            transition: opacity 0.5s ease-out, visibility 0.5s;
-        }
-        body.loaded #loader {
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-        }
-        #error-display {
-            display: none;
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            right: 20px;
-            background: #fee2e2;
-            border: 2px solid #ef4444;
-            padding: 1rem;
-            border-radius: 0.75rem;
-            color: #991b1b;
-            font-size: 0.875rem;
-            z-index: 10000;
-            font-family: monospace;
-            white-space: pre-wrap;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-    </style>
-    <script>
-        // Global error capture
-        window.process = { env: { NODE_ENV: 'production' } };
-        window.onerror = function(msg, url, lineNo, columnNo, error) {
-            const display = document.getElementById('error-display');
-            if (display) {
-                display.style.display = 'block';
-                display.textContent = `[Error]: ${msg}\n[At]: ${url}:${lineNo}\n[Trace]: ${error?.stack || 'no stack available'}`;
-            }
-            document.body.classList.add('loaded'); // Dismiss loader so error is visible
-            return false;
-        };
-    </script>
-    <script type="importmap">
+    <link rel="stylesheet" href="./styles.css">
+<script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@19.0.0",
-    "react-dom": "https://esm.sh/react-dom@19.0.0",
-    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
-    "@google/genai": "https://esm.sh/@google/genai@1.40.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.40.0",
+    "react": "https://esm.sh/react@^19.2.4",
     "react/": "https://esm.sh/react@^19.2.4/"
   }
 }
 </script>
 </head>
-<body>
-    <div id="loader">
-        <div class="flex flex-col items-center gap-4">
-            <div class="w-10 h-10 border-4 border-slate-200 border-t-indigo-600 rounded-full animate-spin"></div>
-            <p class="text-sm font-semibold text-slate-500 tracking-tight">Klyp is warming up...</p>
+<body class="min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-indigo-100 selection:text-indigo-700">
+    
+    <!-- Hidden mount point to satisfy automated environment checks and prevent "root element not found" errors -->
+    <div id="root" style="display: none;"></div>
+
+    <!-- Navbar -->
+    <nav class="fixed top-0 left-0 right-0 z-50 glass-panel border-b border-slate-200">
+      <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+          </div>
+          <span class="text-xl font-bold tracking-tight text-slate-900">Klyp</span>
         </div>
+        
+        <div class="hidden md:flex items-center gap-8 text-sm font-medium text-slate-500">
+          <a href="#" class="hover:text-indigo-600 transition-colors">How it works</a>
+          <a href="#" class="hover:text-indigo-600 transition-colors">Privacy</a>
+        </div>
+
+        <button id="support-btn" class="px-4 py-2 text-sm font-medium text-white bg-slate-900 rounded-full hover:bg-slate-800 transition-all active:scale-95">
+          Support us
+        </button>
+      </div>
+    </nav>
+
+    <!-- Support Modal -->
+    <div id="support-modal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 hidden">
+      <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm modal-overlay"></div>
+      <div class="relative bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl border border-slate-100 transform scale-95 opacity-0 transition-all duration-300 modal-content">
+        <div class="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center mb-6">
+          <svg class="w-6 h-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          </svg>
+        </div>
+        <h3 class="text-xl font-bold text-slate-900 mb-2">You're awesome!</h3>
+        <p class="text-slate-500 leading-relaxed mb-6">
+          You can’t really support us with anything besides using the site and sharing it with others. We're happy to keep Klyp free and ad-free for everyone.
+        </p>
+        <button id="close-modal-btn" class="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors">
+          Sounds good!
+        </button>
+      </div>
     </div>
 
-    <div id="error-display"></div>
-    <div id="root"></div>
+    <!-- Main Content -->
+    <main class="flex-grow flex flex-col items-center justify-start px-4 pt-16 md:pt-24 pb-12">
+      <div class="w-full max-w-4xl text-center mb-12">
+        <h1 class="text-4xl md:text-6xl font-bold tracking-tight text-slate-900 mb-4">
+          Keep your <span class="text-indigo-600">Klyps</span>.
+        </h1>
+        <p class="text-lg text-slate-500 max-w-2xl mx-auto">
+          A minimalist media downloader for your favorite content. Free, private, and beautifully simple.
+        </p>
+      </div>
 
-    <!-- Note the relative path and explicit .tsx extension for ESM resolution -->
-    <script type="module" src="./index.tsx"></script>
+      <div class="w-full max-w-xl mx-auto">
+        <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 p-6 md:p-8 border border-slate-100">
+          <form id="klyp-form" class="space-y-6">
+            <div class="relative group">
+              <input
+                id="url-input"
+                type="text"
+                placeholder="Paste your link..."
+                class="w-full px-6 py-4 bg-slate-50 border-2 border-transparent focus:border-indigo-500 group-hover:bg-slate-100 outline-none transition-all text-lg rounded-2xl"
+              />
+              <button id="clear-input" type="button" class="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-slate-600 hidden">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
 
-    <script type="module">
-        // Failsafe: If app doesn't mount in 5 seconds, check for errors
-        setTimeout(() => {
-            if (!document.body.classList.contains('loaded')) {
-                console.warn("Klyp took too long to load. Checking for hidden errors...");
-                document.body.classList.add('loaded');
-            }
-        }, 5000);
-    </script>
+            <div id="options-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="space-y-2 col-span-1 md:col-span-2">
+                <label class="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Platform</label>
+                <div class="flex bg-slate-100 p-1 rounded-xl gap-1">
+                  <button type="button" data-platform="youtube" class="platform-btn flex-1 py-2 px-3 rounded-lg text-sm font-semibold bg-white shadow-sm text-indigo-600">YouTube</button>
+                  <button type="button" data-platform="tiktok" class="platform-btn flex-1 py-2 px-3 rounded-lg text-sm font-semibold text-slate-500">TikTok</button>
+                </div>
+              </div>
+              <div class="space-y-2">
+                <label class="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Format</label>
+                <div class="flex bg-slate-100 p-1 rounded-xl">
+                  <button type="button" data-format="video" class="format-btn flex-1 py-2 px-3 rounded-lg text-sm font-semibold bg-white shadow-sm text-indigo-600">Video</button>
+                  <button type="button" data-format="audio" class="format-btn flex-1 py-2 px-3 rounded-lg text-sm font-semibold text-slate-500">Audio</button>
+                </div>
+              </div>
+              <div class="space-y-2">
+                <label class="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Quality</label>
+                <select id="quality-select" class="w-full bg-slate-100 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-600 outline-none cursor-pointer">
+                  <option value="high">High (Default)</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="error-box" class="p-4 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-600 hidden">
+              <p id="error-message" class="text-sm font-medium"></p>
+            </div>
+
+            <div id="metadata-preview" class="p-4 bg-indigo-50 border border-indigo-100 rounded-2xl flex gap-4 hidden">
+              <img id="meta-thumb" src="" class="w-24 h-16 md:w-32 md:h-20 object-cover rounded-lg shadow-sm" alt="Thumbnail">
+              <div class="flex-1 min-w-0">
+                <h3 id="meta-title" class="font-bold text-slate-900 truncate text-sm md:text-base"></h3>
+                <p id="meta-author" class="text-xs md:text-sm text-slate-500 font-medium truncate"></p>
+                <div class="mt-2"><span id="meta-format-tag" class="px-2 py-0.5 bg-indigo-600 text-[10px] text-white font-bold rounded uppercase">video</span></div>
+              </div>
+              <button id="reset-form" type="button" class="p-1 text-slate-400 hover:text-slate-600"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+
+            <button id="submit-btn" type="submit" disabled class="w-full py-4 rounded-2xl text-lg font-bold transition-all bg-slate-900 text-white disabled:bg-slate-100 disabled:text-slate-400">
+              <span id="btn-text">Continue</span>
+            </button>
+            
+            <div id="progress-container" class="hidden w-full px-8 py-2">
+              <div class="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                <div id="progress-bar" class="h-full bg-indigo-600 transition-all duration-300" style="width: 0%"></div>
+              </div>
+              <p id="progress-text" class="text-xs text-center text-slate-500 mt-2">Processing: 0%</p>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Feature Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-24 max-w-5xl mx-auto w-full">
+        <div class="bg-white p-6 rounded-3xl border border-slate-200">
+            <h3 class="text-lg font-bold text-slate-900 mb-2">Clean Design</h3>
+            <p class="text-sm text-slate-500">No ads, no clutter. Just simple content downloading.</p>
+        </div>
+        <div class="bg-white p-6 rounded-3xl border border-slate-200">
+            <h3 class="text-lg font-bold text-slate-900 mb-2">Multiple Formats</h3>
+            <p class="text-sm text-slate-500">High-quality video or extracted audio for any device.</p>
+        </div>
+        <div class="bg-white p-6 rounded-3xl border border-slate-200">
+            <h3 class="text-lg font-bold text-slate-900 mb-2">Fast Engine</h3>
+            <p class="text-sm text-slate-500">Optimized extraction using Gemini AI processing.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-auto py-12 px-4 border-t border-slate-200 bg-white">
+      <div class="max-w-4xl mx-auto text-center text-slate-400 text-xs font-medium">
+        <p>© <span id="year"></span> Klyp Media. All rights reserved.</p>
+      </div>
+    </footer>
+
+    <script type="module" src="./script.js"></script>
 </body>
 </html>

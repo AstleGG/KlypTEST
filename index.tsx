@@ -1,44 +1,15 @@
+// Klyp: Pure Static Entry Point Switcher
+// This file is kept to satisfy dev environments that auto-load index.tsx, 
+// but it will exit silently to allow script.js to manage the DOM directly.
 
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import App from './App.tsx';
-
-const startApp = () => {
-  const rootElement = document.getElementById('root');
-  if (!rootElement) {
-    console.error("Klyp: Root element not found.");
-    document.body.classList.add('loaded');
-    return;
-  }
-
-  try {
-    const root = createRoot(rootElement);
-    root.render(
-      <React.StrictMode>
-        <App />
-      </React.StrictMode>
-    );
-    
-    // Hide loader once React has control
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        document.body.classList.add('loaded');
-      }, 100);
-    });
-  } catch (err) {
-    console.error("Klyp: Rendering Error:", err);
-    // Force error visibility
-    const display = document.getElementById('error-display');
-    if (display) {
-        display.style.display = 'block';
-        display.textContent = `Render Error: ${err.message}\n${err.stack}`;
-    }
-    document.body.classList.add('loaded');
-  }
+const init = () => {
+    const root = document.getElementById('root');
+    if (!root) return; // Silent exit for framework-less usage
+    console.log("Klyp: Static environment detected. Script.js taking over.");
 };
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', startApp);
+    document.addEventListener('DOMContentLoaded', init);
 } else {
-  startApp();
+    init();
 }
