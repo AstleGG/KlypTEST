@@ -39,7 +39,7 @@
           from { opacity: 0; transform: scale(0.95) translateY(10px); }
           to { opacity: 1; transform: scale(1) translateY(0); }
         }
-        /* Fallback loader styles */
+        /* Failsafe loader styles */
         #loader {
             position: fixed;
             inset: 0;
@@ -47,16 +47,17 @@
             align-items: center;
             justify-content: center;
             background: #f8fafc;
-            z-index: 1000;
-            transition: opacity 0.4s ease-out;
+            z-index: 9999;
+            transition: opacity 0.5s ease-out, visibility 0.5s;
         }
-        .loaded #loader {
+        body.loaded #loader {
             opacity: 0;
+            visibility: hidden;
             pointer-events: none;
         }
     </style>
 <script>
-    // Shim process for browser environments to prevent crashes if process.env is accessed
+    // Prevent crashes if process.env is accessed in static environments
     window.process = window.process || { env: { NODE_ENV: 'production' } };
 </script>
 <script type="importmap">
@@ -79,22 +80,28 @@
             <p class="text-sm font-semibold text-slate-500 tracking-tight">Klyp is warming up...</p>
         </div>
     </div>
+    
     <div id="root"></div>
-    <script type="module" src="./index.tsx"></script>
+
+    <!-- Ensure relative path for GitHub Pages subfolder support -->
+    <script type="module" src="index.tsx"></script>
+
     <script type="module">
-        // Global error tracking to help debug white screens
-        window.addEventListener('error', (event) => {
-            console.error('Klyp Fatal App Error:', event.error || event.message);
-            // Ensure loader disappears so user can see error in console or UI
+        // Global error handler to dismiss loader if script fails to parse or load
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            console.error('Klyp Runtime Error:', msg, error);
             document.body.classList.add('loaded');
-        });
-        // Auto-hide loader if it takes too long (failsafe)
+            return false;
+        };
+
+        // If the React app doesn't signal 'loaded' within 3 seconds, force it.
+        // This prevents the "warming up" screen from becoming a permanent wall.
         setTimeout(() => {
             if (!document.body.classList.contains('loaded')) {
-                console.warn('Klyp: Loading timeout reached, force hiding loader.');
+                console.warn('Klyp: Taking longer than expected to load. Forcing UI...');
                 document.body.classList.add('loaded');
             }
-        }, 4000);
+        }, 3000);
     </script>
 </body>
 </html>
