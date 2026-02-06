@@ -55,6 +55,10 @@
             pointer-events: none;
         }
     </style>
+<script>
+    // Shim process for browser environments to prevent crashes if process.env is accessed
+    window.process = window.process || { env: { NODE_ENV: 'production' } };
+</script>
 <script type="importmap">
 {
   "imports": {
@@ -76,16 +80,21 @@
         </div>
     </div>
     <div id="root"></div>
-    <script type="module" src="index.tsx"></script>
+    <script type="module" src="./index.tsx"></script>
     <script type="module">
         // Global error tracking to help debug white screens
         window.addEventListener('error', (event) => {
-            console.error('App Error:', event.message);
+            console.error('Klyp Fatal App Error:', event.error || event.message);
             // Ensure loader disappears so user can see error in console or UI
             document.body.classList.add('loaded');
         });
         // Auto-hide loader if it takes too long (failsafe)
-        setTimeout(() => document.body.classList.add('loaded'), 2500);
+        setTimeout(() => {
+            if (!document.body.classList.contains('loaded')) {
+                console.warn('Klyp: Loading timeout reached, force hiding loader.');
+                document.body.classList.add('loaded');
+            }
+        }, 4000);
     </script>
 </body>
 </html>

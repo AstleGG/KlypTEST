@@ -6,7 +6,7 @@ import App from './App';
 const startApp = () => {
   const rootElement = document.getElementById('root');
   if (!rootElement) {
-    console.error("Target root element not found.");
+    console.error("Klyp: Target root element not found.");
     return;
   }
 
@@ -17,10 +17,12 @@ const startApp = () => {
         <App />
       </React.StrictMode>
     );
-    // React has started rendering, we can hide the static loader
-    document.body.classList.add('loaded');
+    // Use requestAnimationFrame to ensure we signal completion after the first render cycle
+    requestAnimationFrame(() => {
+        document.body.classList.add('loaded');
+    });
   } catch (err) {
-    console.error("Mounting Error:", err);
+    console.error("Klyp: Mounting Error:", err);
     document.body.classList.add('loaded');
   }
 };
