@@ -1,5 +1,5 @@
 {
-  "name": "Klyp - Minimalist Media Downloader",
-  "description": "A clean, modern, and ad-free tool for downloading audio and video from YouTube and TikTok for personal and educational use.",
+  "name": "Klyp",
+  "description": "Minimalist YouTube and TikTok Media Tool",
   "requestFramePermissions": []
 }
