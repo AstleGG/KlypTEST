@@ -1,15 +1,13 @@
-// Klyp: Pure Static Entry Point Switcher
-// This file is kept to satisfy dev environments that auto-load index.tsx, 
-// but it will exit silently to allow script.js to manage the DOM directly.
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App.tsx';
 
-const init = () => {
-    const root = document.getElementById('root');
-    if (!root) return; // Silent exit for framework-less usage
-    console.log("Klyp: Static environment detected. Script.js taking over.");
-};
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-} else {
-    init();
+const container = document.getElementById('root');
+if (container) {
+  const root = createRoot(container);
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
 }
